@@ -24,10 +24,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <Header />
           <main className="flex-1 w-full">{children}</main>
-          <footer className="no-print border-t border-line mt-16">
-            <div className="mx-auto max-w-3xl px-5 py-8 text-sm text-muted flex flex-wrap gap-x-6 gap-y-2 justify-between">
-              <span>KCL Islamic Society · Ramadan iftars</span>
-              <a href="/rules" className="underline underline-offset-4 hover:text-ink">Rules and privacy</a>
+          <footer className="no-print mt-20">
+            <div className="mx-auto max-w-3xl px-6 py-8 text-xs uppercase tracking-[0.2em] text-muted flex justify-between">
+              <span>KCL ISoc</span>
+              <a href="/rules" className="hover:text-crimson-900">Rules</a>
             </div>
           </footer>
         </AuthProvider>

@@ -28,9 +28,9 @@ export default function AdminPage() {
   return (
     <div className="mx-auto max-w-4xl px-5 py-10">
       <PageTitle kicker="Ramadan team" title="Admin" />
-      <div className="inline-grid grid-cols-3 bg-sand rounded-full p-1 text-sm font-medium mb-6">
+      <div className="flex gap-6 text-sm font-medium mb-8 border-b border-line">
         {(["nights", "people", "activity"] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`rounded-full px-5 py-2 capitalize ${tab === t ? "bg-white shadow-sm" : "text-muted"}`}>{t}</button>
+          <button key={t} onClick={() => setTab(t)} className={`py-2.5 -mb-px border-b-2 capitalize ${tab === t ? "border-crimson-900 text-crimson-900" : "border-transparent text-muted"}`}>{t}</button>
         ))}
       </div>
       {tab === "nights" && <Nights />}
@@ -73,19 +73,19 @@ function Nights() {
 
   return (
     <div className="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
-      <Card className="overflow-hidden">
+      <Card className="border-t border-line">
         {nights === null ? <Spinner /> : nights.length === 0 ? (
-          <p className="p-5 text-muted">No nights yet. Add the first one.</p>
+          <p className="py-5 text-muted">No nights yet. Add the first one.</p>
         ) : (
           <div className="divide-y divide-line">
             {nights.map((n) => (
-              <Link key={n.id} href={`/admin/night?id=${n.id}`} className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-ivory">
+              <Link key={n.id} href={`/admin/night?id=${n.id}`} className="flex items-center justify-between gap-4 py-4 border-b border-line hover:text-crimson-900">
                 <div>
                   <p className="font-medium">{fmtPlainDate(n.night_date)} <span className="text-muted font-normal">· iftar {fmtTime(n.iftar_at)}</span></p>
                   <p className="text-sm text-muted">{n.room || "No room set"} · {n.capacity_brothers} brothers, {n.capacity_sisters} sisters</p>
                 </div>
-                <span className={`text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full ${
-                  n.status === "scheduled" ? "bg-emerald-800/10 text-emerald-900" : n.status === "closed" ? "bg-sand text-muted" : "bg-danger/10 text-danger"}`}>
+                <span className={`text-xs font-semibold uppercase tracking-wider ${
+                  n.status === "scheduled" ? "text-crimson-900" : n.status === "closed" ? "text-muted" : "text-danger"}`}>
                   {n.status === "scheduled" ? "Upcoming" : n.status}
                 </span>
               </Link>
@@ -94,7 +94,7 @@ function Nights() {
         )}
       </Card>
 
-      <Card className="p-5">
+      <Card className="lg:border-l lg:border-line lg:pl-6">
         <h2 className="font-medium mb-4">Add a night</h2>
         <form onSubmit={add} className="space-y-3">
           <Field label="Date"><input type="date" required value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} /></Field>
@@ -137,9 +137,9 @@ function People({ myId }: { myId: string }) {
     <div>
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" className={inputCls} />
       {error && <div className="mt-3"><Notice tone="error">{error}</Notice></div>}
-      <Card className="mt-4 divide-y divide-line">
-        {rows === null ? <Spinner /> : rows.length === 0 ? <p className="p-5 text-muted">No one found.</p> : rows.map((p) => (
-          <div key={p.id} className="px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-3 justify-between">
+      <Card className="mt-4 divide-y divide-line border-y border-line">
+        {rows === null ? <Spinner /> : rows.length === 0 ? <p className="py-5 text-muted">No one found.</p> : rows.map((p) => (
+          <div key={p.id} className="py-4 flex flex-wrap items-center gap-x-6 gap-y-3 justify-between">
             <div className="min-w-0">
               <p className="font-medium">{p.full_name}{p.id === myId && <span className="text-xs text-muted"> (you)</span>}</p>
               <p className="text-sm text-muted truncate">{p.email}</p>
@@ -150,11 +150,11 @@ function People({ myId }: { myId: string }) {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <select value={p.side} onChange={(e) => update(p, { p_side: e.target.value }, `Move ${p.full_name} to ${e.target.value}?`)}
-                className="rounded-full border border-line px-3 py-2 text-sm bg-white">
+                className="border-b border-crimson-900/30 bg-transparent py-2 text-sm">
                 <option value="brothers">Brothers</option><option value="sisters">Sisters</option>
               </select>
               <select value={p.role} onChange={(e) => update(p, { p_role: e.target.value }, `Make ${p.full_name} ${e.target.value === "attendee" ? "a regular attendee" : `a${e.target.value === "admin" ? "n" : ""} ${e.target.value}`}?`)}
-                className="rounded-full border border-line px-3 py-2 text-sm bg-white">
+                className="border-b border-crimson-900/30 bg-transparent py-2 text-sm">
                 <option value="attendee">Attendee</option><option value="volunteer">Volunteer</option><option value="admin">Admin</option>
               </select>
               {p.strikes > 0 && <Button variant="outline" className="!py-2 !px-3 text-sm" onClick={() => update(p, { p_remove_strike: true }, `Remove one strike from ${p.full_name}?`)}>Remove strike</Button>}
@@ -180,9 +180,9 @@ function Activity() {
     supabase().rpc("admin_audit", { p_limit: 200 }).then(({ data }) => setRows((data as AuditRow[]) ?? []));
   }, []);
   return (
-    <Card className="divide-y divide-line">
-      {rows === null ? <Spinner /> : rows.length === 0 ? <p className="p-5 text-muted">Nothing yet.</p> : rows.map((r, i) => (
-        <div key={i} className="px-5 py-3 text-sm flex flex-wrap justify-between gap-2">
+    <Card className="divide-y divide-line border-y border-line">
+      {rows === null ? <Spinner /> : rows.length === 0 ? <p className="py-5 text-muted">Nothing yet.</p> : rows.map((r, i) => (
+        <div key={i} className="py-3 text-sm flex flex-wrap justify-between gap-2">
           <span>
             <strong>{actionLabels[r.action] ?? r.action}</strong>
             {r.person_name && <> · {r.person_name}</>}

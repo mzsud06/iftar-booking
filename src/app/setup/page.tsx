@@ -39,31 +39,29 @@ export default function SetupPage() {
 
   return (
     <div className="mx-auto max-w-md px-5 py-10">
-      <PageTitle kicker="One-time setup" title="About you">
-        You only do this once. Your name is shown to the door team when your ticket is scanned.
-      </PageTitle>
-      <Card className="p-6">
+      <PageTitle title="About you" />
+      <Card>
         <form onSubmit={save} className="space-y-5">
           <Field label="Full name">
             <input required minLength={2} maxLength={80} value={name} onChange={(e) => setName(e.target.value)}
               className={inputCls} autoComplete="name" placeholder="First and last name" />
           </Field>
           <fieldset>
-            <legend className="text-sm font-medium mb-1.5">Seating</legend>
+            <legend className="text-xs uppercase tracking-[0.15em] text-muted mb-2">Seating</legend>
             <div className="grid grid-cols-2 gap-3">
               {(["brothers", "sisters"] as Side[]).map((s) => (
                 <button type="button" key={s} onClick={() => setSide(s)}
-                  className={`rounded-xl border px-4 py-3.5 capitalize font-medium transition ${
-                    side === s ? "border-emerald-800 bg-emerald-900 text-ivory" : "border-line bg-white hover:border-emerald-700"}`}>
+                  className={`border px-4 py-3.5 capitalize font-medium transition ${
+                    side === s ? "border-crimson-900 bg-crimson-900 text-ivory" : "border-crimson-900/30 hover:border-crimson-900"}`}>
                   {s}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-muted mt-1.5">Only an admin can change this later.</p>
+            
           </fieldset>
           <label className="flex gap-3 items-start text-sm">
-            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-1 w-4 h-4 accent-emerald-800" />
-            <span>I've read the <a href="/rules" target="_blank" className="underline underline-offset-4">rules and privacy notice</a>, including the strike rule for missed bookings.</span>
+            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-1 w-4 h-4 accent-crimson-900" />
+            <span>I agree to the <a href="/rules" target="_blank" className="underline underline-offset-4 decoration-gold">rules</a>.</span>
           </label>
           <Button type="submit" busy={busy} disabled={!agree || name.trim().length < 2 || !side} className="w-full">Save</Button>
         </form>

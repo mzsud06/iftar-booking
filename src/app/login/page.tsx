@@ -43,10 +43,8 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto max-w-md px-5 py-10">
-      <PageTitle kicker="Welcome" title="Log in or sign up">
-        No password needed. We'll email you a link and a code.
-      </PageTitle>
-      <Card className="p-6">
+      <PageTitle title="Log in" />
+      <Card>
         {!sent ? (
           <form onSubmit={sendCode} className="space-y-4">
             <Field label="Email address">
@@ -61,14 +59,14 @@ export default function LoginPage() {
                 placeholder="you@example.com"
               />
             </Field>
-            <Button type="submit" busy={busy} className="w-full">Email me a login link</Button>
+            <Button type="submit" busy={busy} className="w-full">Send link</Button>
           </form>
         ) : (
           <form onSubmit={verify} className="space-y-4">
             <Notice tone="success">
-              Check <strong>{email}</strong>. Tap the link in the email, or type the code from it below.
+              Link sent to <strong>{email}</strong>.
             </Notice>
-            <Field label="Code from the email" hint="If the email has no code, just tap the link instead.">
+            <Field label="Or enter code">
               <input
                 inputMode="numeric"
                 autoComplete="one-time-code"
@@ -86,9 +84,7 @@ export default function LoginPage() {
         )}
         {error && <div className="mt-4"><Notice tone="error">{error}</Notice></div>}
       </Card>
-      <p className="text-xs text-muted mt-4">
-        Can't find the email? Check your spam folder. It can take a minute to arrive.
-      </p>
+      <p className="text-xs text-muted mt-6">Not there? Check spam.</p>
     </div>
   );
 }

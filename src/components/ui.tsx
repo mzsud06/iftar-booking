@@ -8,20 +8,18 @@ type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variants: Record<NonNullable<BtnProps["variant"]>, string> = {
-  primary: "bg-emerald-900 text-ivory hover:bg-emerald-800",
-  gold: "bg-gold text-emerald-950 hover:brightness-105",
-  ghost: "text-emerald-900 hover:bg-sand",
-  danger: "bg-white text-danger border border-danger/40 hover:bg-danger/5",
-  outline: "bg-white text-emerald-900 border border-line hover:border-emerald-700",
+  primary: "bg-crimson-900 text-ivory hover:bg-crimson-800",
+  gold: "bg-gold text-crimson-950 hover:brightness-105",
+  ghost: "text-crimson-900 underline underline-offset-4 decoration-gold hover:text-crimson-700",
+  danger: "text-danger underline underline-offset-4 hover:text-crimson-700",
+  outline: "text-crimson-900 border border-crimson-900/30 hover:border-crimson-900",
 };
+
+const shape = "inline-flex items-center justify-center gap-2 px-6 py-3 text-[15px] font-medium tracking-wide transition disabled:opacity-40 disabled:cursor-not-allowed";
 
 export function Button({ variant = "primary", busy, className = "", children, disabled, ...rest }: BtnProps) {
   return (
-    <button
-      {...rest}
-      disabled={disabled || busy}
-      className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-[15px] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${className}`}
-    >
+    <button {...rest} disabled={disabled || busy} className={`${shape} ${variants[variant]} ${className}`}>
       {busy && <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />}
       {children}
     </button>
@@ -30,36 +28,30 @@ export function Button({ variant = "primary", busy, className = "", children, di
 
 export function LinkButton({ href, children, variant = "primary", className = "" }:
   { href: string; children: React.ReactNode; variant?: BtnProps["variant"]; className?: string }) {
-  return (
-    <Link
-      href={href}
-      className={`inline-flex items-center justify-center rounded-full px-5 py-3 text-[15px] font-medium transition ${variants[variant ?? "primary"]} ${className}`}
-    >
-      {children}
-    </Link>
-  );
+  return <Link href={href} className={`${shape} ${variants[variant ?? "primary"]} ${className}`}>{children}</Link>;
 }
 
+// Kept for structure only: no border, no background, no rounding.
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`bg-white rounded-2xl border border-line shadow-[0_1px_0_rgba(0,0,0,0.02)] ${className}`}>{children}</div>;
+  return <div className={className}>{children}</div>;
 }
 
 export function Notice({ tone = "info", children }: { tone?: "info" | "error" | "success" | "warn"; children: React.ReactNode }) {
   const tones = {
-    info: "bg-sand border-line text-ink",
-    error: "bg-danger/5 border-danger/30 text-danger",
-    success: "bg-emerald-800/5 border-emerald-700/30 text-emerald-900",
-    warn: "bg-warn/10 border-warn/30 text-[#7a4f12]",
+    info: "border-gold text-ink",
+    error: "border-danger text-danger",
+    success: "border-crimson-800 text-crimson-900",
+    warn: "border-warn text-[#6e4510]",
   };
-  return <div role={tone === "error" ? "alert" : undefined} className={`rounded-xl border px-4 py-3 text-[15px] ${tones[tone]}`}>{children}</div>;
+  return <div role={tone === "error" ? "alert" : undefined} className={`border-l-2 pl-4 py-1 text-[15px] ${tones[tone]}`}>{children}</div>;
 }
 
 export function PageTitle({ kicker, title, children }: { kicker?: string; title: string; children?: React.ReactNode }) {
   return (
-    <div className="mb-6">
-      {kicker && <p className="text-xs uppercase tracking-[0.18em] text-gold font-semibold mb-2">{kicker}</p>}
-      <h1 className="font-display text-4xl font-bold leading-tight">{title}</h1>
-      {children && <div className="mt-2 text-muted">{children}</div>}
+    <div className="mb-8">
+      {kicker && <p className="text-xs uppercase tracking-[0.2em] text-gold font-semibold mb-2">{kicker}</p>}
+      <h1 className="font-display text-5xl font-bold leading-none text-crimson-900">{title}</h1>
+      {children && <div className="mt-3 text-muted">{children}</div>}
     </div>
   );
 }
@@ -67,7 +59,7 @@ export function PageTitle({ kicker, title, children }: { kicker?: string; title:
 export function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
     <label className="block">
-      <span className="block text-sm font-medium mb-1.5">{label}</span>
+      <span className="block text-xs uppercase tracking-[0.15em] text-muted mb-1">{label}</span>
       {children}
       {hint && <span className="block text-xs text-muted mt-1">{hint}</span>}
     </label>
@@ -75,12 +67,12 @@ export function Field({ label, children, hint }: { label: string; children: Reac
 }
 
 export const inputCls =
-  "w-full rounded-xl border border-line bg-white px-4 py-3 text-[16px] outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15";
+  "w-full bg-transparent border-0 border-b border-crimson-900/30 px-0 py-2.5 text-[17px] outline-none focus:border-crimson-900 placeholder:text-muted/60";
 
 export function Spinner() {
   return (
-    <div className="flex justify-center py-16">
-      <span className="w-6 h-6 rounded-full border-2 border-emerald-800 border-t-transparent animate-spin" />
+    <div className="flex justify-center py-20">
+      <span className="w-6 h-6 rounded-full border-2 border-crimson-800 border-t-transparent animate-spin" />
     </div>
   );
 }

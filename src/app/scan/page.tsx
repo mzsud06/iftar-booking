@@ -91,18 +91,18 @@ export default function ScanPage() {
 
           <div className="grid grid-cols-2 gap-2 mt-3">
             {counts.map((c) => (
-              <div key={c.side} className="rounded-xl bg-white border border-line px-3 py-2">
+              <div key={c.side} className="border-l-2 border-gold pl-3 py-1">
                 <p className="text-[11px] uppercase tracking-wider text-muted">{c.side}</p>
                 <p className="text-lg font-semibold tabular-nums">{c.checked_in}<span className="text-muted font-normal text-sm"> / {c.booked} in</span></p>
-                <p className="text-xs text-muted">{c.walkins} walk-ins · <span className={c.spots_left > 0 ? "text-emerald-800 font-semibold" : ""}>{c.spots_left} free</span></p>
+                <p className="text-xs text-muted">{c.walkins} walk-ins · <span className={c.spots_left > 0 ? "text-crimson-800 font-semibold" : ""}>{c.spots_left} free</span></p>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-3 bg-sand rounded-full p-1 mt-4 text-sm font-medium">
+          <div className="grid grid-cols-3 mt-5 text-sm font-medium border-b border-line">
             {(["scan", "search", "walkins"] as const).map((t) => (
               <button key={t} onClick={() => setTab(t)}
-                className={`rounded-full py-2 ${tab === t ? "bg-white shadow-sm" : "text-muted"}`}>
+                className={`py-2.5 -mb-px border-b-2 ${tab === t ? "border-crimson-900 text-crimson-900" : "border-transparent text-muted"}`}>
                 {t === "scan" ? "Scan" : t === "search" ? "Search" : "Walk-ins"}
               </button>
             ))}
@@ -152,7 +152,7 @@ function Scanner({ paused, onCode }: { paused: boolean; onCode: (code: string) =
       try {
         await scanner.start();
       } catch {
-        setCamError("Couldn't open the camera. Allow camera access in your browser settings, or type the backup code below.");
+        setCamError("Camera blocked. Allow it in browser settings, or type the code.");
       }
     })();
     return () => {
@@ -164,12 +164,12 @@ function Scanner({ paused, onCode }: { paused: boolean; onCode: (code: string) =
 
   return (
     <div>
-      <div className="relative rounded-2xl overflow-hidden bg-black aspect-square">
+      <div className="relative overflow-hidden bg-black aspect-square">
         <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
       </div>
       {camError && <div className="mt-3"><Notice tone="warn">{camError}</Notice></div>}
       <form className="flex gap-2 mt-3" onSubmit={(e) => { e.preventDefault(); if (manual.trim()) { onCode(manual); setManual(""); } }}>
-        <input value={manual} onChange={(e) => setManual(e.target.value.toUpperCase())} placeholder="Backup code, e.g. K7P-3QX"
+        <input value={manual} onChange={(e) => setManual(e.target.value.toUpperCase())} placeholder="Backup code"
           className={`${inputCls} font-mono tracking-widest placeholder:font-sans placeholder:tracking-normal`} autoCapitalize="characters" />
         <Button type="submit">Check</Button>
       </form>
@@ -195,10 +195,10 @@ function Search({ nightId, onCheckIn, refreshKey }: { nightId: string; onCheckIn
   return (
     <div>
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or code" className={inputCls} autoFocus />
-      <Card className="mt-3 divide-y divide-line">
-        {rows.length === 0 && <p className="p-4 text-sm text-muted">{loading ? "Searching..." : "No one found."}</p>}
+      <Card className="mt-3 divide-y divide-line border-y border-line">
+        {rows.length === 0 && <p className="py-4 text-sm text-muted">{loading ? "Searching..." : "No one found."}</p>}
         {rows.map((r) => (
-          <div key={r.booking_id} className="flex items-center justify-between gap-3 px-4 py-3">
+          <div key={r.booking_id} className="flex items-center justify-between gap-3 py-3">
             <div className="min-w-0">
               <p className="font-medium truncate">{r.full_name}{r.is_comp && <span className="ml-1.5 text-xs text-gold">FREE</span>}</p>
               <p className="text-xs text-muted capitalize">{r.side} · {shortCode(r.short_code)} · {r.status === "confirmed" ? (r.checked_in_at ? `in at ${fmtTime(r.checked_in_at)}` : "booked") : r.status}</p>
@@ -234,13 +234,9 @@ function WalkIns({ nightId, counts, afterIftar, onChange }:
 
   return (
     <div className="space-y-3">
-      <Notice tone={afterIftar ? "success" : "info"}>
-        {afterIftar
-          ? "It's past iftar time, so every unscanned spot is free for walk-ins."
-          : "Before iftar, only spots nobody booked are free. At iftar time, unscanned spots open up too."}
-      </Notice>
+      <p className="text-sm text-muted">{afterIftar ? "Unscanned spots are now free." : "Unscanned spots open at iftar time."}</p>
       {counts.map((c) => (
-        <Card key={c.side} className="p-4">
+        <Card key={c.side} className="py-4 border-b border-line">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-wider text-muted">{c.side}</p>
@@ -267,7 +263,7 @@ function ResultOverlay({ r, onClose }: { r: ScanResult; onClose: () => void }) {
   }, [r, onClose]);
 
   const map: Record<ScanResult["result"], { bg: string; title: string; sub?: string }> = {
-    ok: { bg: "bg-emerald-800", title: `Welcome${r.name ? `, ${r.name.split(" ")[0]}` : ""}`, sub: r.is_comp ? "Free ticket" : undefined },
+    ok: { bg: "bg-crimson-800", title: `Welcome${r.name ? `, ${r.name.split(" ")[0]}` : ""}`, sub: r.is_comp ? "Free ticket" : undefined },
     already: { bg: "bg-warn", title: "Already scanned", sub: r.checked_in_at ? `Checked in at ${fmtTime(r.checked_in_at)}` : undefined },
     wrong_night: { bg: "bg-danger", title: "Wrong night", sub: r.night_date ? `This ticket is for ${fmtPlainDate(r.night_date)}` : undefined },
     cancelled: { bg: "bg-danger", title: "Cancelled ticket", sub: "This booking was cancelled." },

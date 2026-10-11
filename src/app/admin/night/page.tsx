@@ -118,7 +118,7 @@ function NightAdmin() {
 
       <div className="grid sm:grid-cols-2 gap-3 mb-6">
         {counts.map((c) => (
-          <Card key={c.side} className="p-4">
+          <Card key={c.side} className="border-l-2 border-gold pl-4">
             <p className="text-xs uppercase tracking-wider text-muted">{c.side}</p>
             <div className="grid grid-cols-4 gap-2 mt-2 text-center">
               {[["Booked", c.booked], ["Scanned", c.checked_in], ["Walk-ins", c.walkins], ["Free", c.spots_left]].map(([l, v]) => (
@@ -131,7 +131,7 @@ function NightAdmin() {
       </div>
 
       {scheduled && (
-        <Card className="p-5 mb-6 no-print">
+        <Card className="py-5 mb-6 border-y border-line no-print">
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => setEdit((e) => !e)} variant="outline">{edit ? "Stop editing" : "Edit night"}</Button>
             {afterIftar && (
@@ -171,29 +171,29 @@ function NightAdmin() {
       )}
 
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email or code" className={`${inputCls} no-print`} />
-      <Card className="mt-3 overflow-x-auto">
+      <Card className="mt-3 overflow-x-auto border-t border-line">
         <table className="w-full text-sm">
           <thead className="text-left text-muted">
             <tr className="border-b border-line">
-              <th className="px-4 py-3 font-medium">Name</th><th className="px-4 py-3 font-medium">Seating</th>
-              <th className="px-4 py-3 font-medium">Code</th><th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium no-print"></th>
+              <th className="pr-4 py-3 font-medium">Name</th><th className="pr-4 py-3 font-medium">Seating</th>
+              <th className="pr-4 py-3 font-medium">Code</th><th className="pr-4 py-3 font-medium">Status</th>
+              <th className="pr-4 py-3 font-medium no-print"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {rows.length === 0 && <tr><td colSpan={5} className="px-4 py-5 text-muted">No bookings.</td></tr>}
             {rows.map((r) => (
               <tr key={r.booking_id}>
-                <td className="px-4 py-3"><p className="font-medium">{r.full_name}</p>{r.email && <p className="text-xs text-muted">{r.email}</p>}</td>
-                <td className="px-4 py-3 capitalize">{r.side}</td>
-                <td className="px-4 py-3 font-mono">{shortCode(r.short_code)}</td>
-                <td className="px-4 py-3">
+                <td className="pr-4 py-3"><p className="font-medium">{r.full_name}</p>{r.email && <p className="text-xs text-muted">{r.email}</p>}</td>
+                <td className="pr-4 py-3 capitalize">{r.side}</td>
+                <td className="pr-4 py-3 font-mono">{shortCode(r.short_code)}</td>
+                <td className="pr-4 py-3">
                   {r.is_comp && <span className="text-gold font-semibold mr-1">Free</span>}
-                  {r.status === "confirmed" ? (r.checked_in_at ? <span className="text-emerald-800 font-medium">In {fmtTime(r.checked_in_at)}</span> : "Booked") : r.status === "offered" ? "Offered spot" : "Waitlist"}
+                  {r.status === "confirmed" ? (r.checked_in_at ? <span className="text-crimson-800 font-medium">In {fmtTime(r.checked_in_at)}</span> : "Booked") : r.status === "offered" ? "Offered spot" : "Waitlist"}
                 </td>
-                <td className="px-4 py-3 text-right whitespace-nowrap no-print">
+                <td className="pr-4 py-3 text-right whitespace-nowrap no-print">
                   {scheduled && r.status === "confirmed" && !r.checked_in_at && (
-                    <button className="text-emerald-800 font-medium mr-3" onClick={() => run("admin_check_in", { p_booking: r.booking_id }, `${r.full_name} checked in.`)}>Check in</button>
+                    <button className="text-crimson-800 font-medium mr-3" onClick={() => run("admin_check_in", { p_booking: r.booking_id }, `${r.full_name} checked in.`)}>Check in</button>
                   )}
                   {scheduled && r.checked_in_at && (
                     <button className="text-muted mr-3" onClick={() => run("admin_undo_check_in", { p_booking: r.booking_id }, "Check-in undone.", `Undo ${r.full_name}'s check-in?`)}>Undo</button>

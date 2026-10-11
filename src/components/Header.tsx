@@ -12,18 +12,17 @@ export default function Header() {
   const [open, setOpen] = useState(false);
 
   const links: { href: string; label: string }[] = [{ href: "/", label: "Iftars" }];
-  if (session) links.push({ href: "/ticket", label: "My ticket" });
+  if (session) links.push({ href: "/ticket", label: "Ticket" });
   links.push({ href: "/rules", label: "Rules" });
   if (profile && (profile.role === "volunteer" || profile.role === "admin")) links.push({ href: "/scan", label: "Scan" });
   if (profile?.role === "admin") links.push({ href: "/admin", label: "Admin" });
 
   return (
-    <header className="bg-emerald-900 text-ivory relative overflow-hidden">
-      <div className="pattern absolute inset-0 opacity-60" aria-hidden />
-      <div className="relative mx-auto max-w-3xl px-5 h-16 flex items-center justify-between">
+    <header className="bg-crimson-900 text-ivory relative overflow-hidden">
+            <div className="relative mx-auto max-w-3xl px-5 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
           <Star className="w-6 h-6 text-gold" />
-          <span className="font-display text-2xl font-semibold leading-none">KCL ISoc Iftars</span>
+          <span className="font-display text-2xl font-semibold leading-none">KCL ISoc</span>
         </Link>
 
         <nav className="hidden sm:flex items-center gap-1 text-sm">
@@ -31,8 +30,8 @@ export default function Header() {
             <Link
               key={l.href}
               href={l.href}
-              className={`px-3 py-2 rounded-full transition ${
-                path === l.href ? "bg-emerald-800 text-ivory" : "text-ivory/80 hover:text-ivory"
+              className={`px-3 py-2 transition border-b-2 ${
+                path === l.href ? "border-gold text-ivory" : "border-transparent text-ivory/70 hover:text-ivory"
               }`}
             >
               {l.label}
@@ -41,7 +40,7 @@ export default function Header() {
           {session ? (
             <button onClick={signOut} className="ml-2 px-3 py-2 text-ivory/70 hover:text-ivory">Log out</button>
           ) : (
-            <Link href="/login" className="ml-2 px-4 py-2 rounded-full bg-gold text-emerald-950 font-medium">Log in</Link>
+            <Link href="/login" className="ml-3 px-4 py-2 bg-gold text-crimson-950 font-medium">Log in</Link>
           )}
         </nav>
 
@@ -58,7 +57,7 @@ export default function Header() {
       </div>
 
       {open && (
-        <nav className="sm:hidden relative border-t border-emerald-800 px-5 py-3 flex flex-col text-base">
+        <nav className="sm:hidden relative border-t border-gold/30 px-5 py-3 flex flex-col text-base">
           {links.map((l) => (
             <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="py-2.5 text-ivory/90">
               {l.label}
