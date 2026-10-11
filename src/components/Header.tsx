@@ -18,7 +18,7 @@ export default function Header() {
   if (profile?.role === "admin") links.push({ href: "/admin", label: "Admin" });
 
   return (
-    <header className="bg-crimson-900 text-ivory relative overflow-hidden">
+    <header className="bg-crimson-950 text-ivory relative overflow-hidden border-b border-gold/60">
             <div className="relative mx-auto max-w-3xl px-5 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
           <Star className="w-6 h-6 text-gold" />
