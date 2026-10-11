@@ -1,7 +1,9 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+// These are public by design (the database rules protect everything), so they can
+// live in the code. Environment variables override them if set.
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://garyzggateszublkbael.supabase.co";
+const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_MouOvrZGyPz87kSTlqXoBg_dTsdrBlu";
 
 let client: SupabaseClient | null = null;
 
