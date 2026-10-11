@@ -6,6 +6,9 @@ import { useAuth } from "@/lib/auth";
 import { errorText, supabase } from "@/lib/supabase";
 import { Button, Card, Field, Notice, PageTitle, inputCls } from "@/components/ui";
 
+// Turn on once custom email (SMTP) is set up and the email template includes {{ .Token }}.
+const SHOW_CODE = false;
+
 export default function LoginPage() {
   const { ready, session, profile } = useAuth();
   const router = useRouter();
@@ -62,25 +65,32 @@ export default function LoginPage() {
             <Button type="submit" busy={busy} className="w-full">Send link</Button>
           </form>
         ) : (
-          <form onSubmit={verify} className="space-y-4">
+          <div className="space-y-5">
             <Notice tone="success">
-              Link sent to <strong>{email}</strong>.
+              Link sent to <strong>{email}</strong>. Tap it to log in.
             </Notice>
-            <Field label="Or enter code">
-              <input
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                className={`${inputCls} tracking-[0.4em] text-center text-xl`}
-                placeholder="••••••"
-              />
-            </Field>
-            <Button type="submit" busy={busy} disabled={code.length < 6} className="w-full">Log in</Button>
-            <button type="button" onClick={() => { setSent(false); setCode(""); }} className="w-full text-sm text-muted underline underline-offset-4">
+            <p className="text-sm text-muted">
+              If it opens inside Gmail or Outlook, tap <strong>⋯</strong> and choose <strong>Open in browser</strong>, so you stay logged in.
+            </p>
+            {SHOW_CODE && (
+              <form onSubmit={verify} className="space-y-4">
+                <Field label="Or enter code">
+                  <input
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                    className={`${inputCls} tracking-[0.4em] text-center text-xl`}
+                    placeholder="••••••"
+                  />
+                </Field>
+                <Button type="submit" busy={busy} disabled={code.length < 6} className="w-full">Log in</Button>
+              </form>
+            )}
+            <button type="button" onClick={() => { setSent(false); setCode(""); }} className="text-sm text-muted underline underline-offset-4">
               Use a different email
             </button>
-          </form>
+          </div>
         )}
         {error && <div className="mt-4"><Notice tone="error">{error}</Notice></div>}
       </Card>
