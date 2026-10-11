@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useServerNow } from "@/lib/auth";
-import { errorText, supabase, type MyBooking, type Night, type NightCount } from "@/lib/supabase";
+import { errorText, place, supabase, type MyBooking, type Night, type NightCount } from "@/lib/supabase";
 import { countdown, fmtDate, fmtDayLong, fmtTime, hoursBefore } from "@/lib/time";
 import { Button, LinkButton, Notice, Spinner } from "@/components/ui";
 
@@ -97,7 +97,10 @@ export default function Home() {
             <div className="rule mt-3" />
             {upcoming.map((n) => (
               <div key={n.id} className="flex items-baseline justify-between py-4 border-b border-line">
-                <span className="font-display text-2xl font-semibold text-crimson-900">{fmtDate(n.iftar_at)}</span>
+                <span>
+                  <span className="font-display text-2xl font-semibold text-crimson-900">{fmtDate(n.iftar_at)}</span>
+                  {n.campus && <span className="ml-3 text-xs uppercase tracking-[0.15em] text-gold font-semibold">{n.campus}</span>}
+                </span>
                 <span className="text-sm text-muted">Opens {fmtDate(n.booking_opens_at)} {fmtTime(n.booking_opens_at)}</span>
               </div>
             ))}
@@ -163,7 +166,7 @@ function NextNight(props: {
 
   return (
     <div>
-      <p className="text-gold text-xs uppercase tracking-[0.25em] font-semibold">Next iftar</p>
+      <p className="text-gold text-xs uppercase tracking-[0.25em] font-semibold">Next iftar{night.campus ? ` · ${night.campus}` : ""}</p>
       <h1 className="font-display text-6xl sm:text-7xl font-bold mt-3 leading-[0.95]">{fmtDayLong(night.iftar_at)}</h1>
       <p className="mt-4 text-ivory/80 text-lg">
         {fmtTime(night.iftar_at)}{night.room ? ` · ${night.room}` : ""}

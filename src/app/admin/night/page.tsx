@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, useServerNow } from "@/lib/auth";
-import { errorText, supabase, type Night, type NightCount, type Side } from "@/lib/supabase";
+import { CAMPUSES, errorText, place, supabase, type Night, type NightCount, type Side } from "@/lib/supabase";
 import { fmtDateTime, fmtDayLong, fmtTime, shortCode } from "@/lib/time";
 import { Button, Card, Field, Notice, Spinner, inputCls } from "@/components/ui";
 
@@ -32,7 +32,7 @@ function NightAdmin() {
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState<{ tone: "error" | "success"; text: string } | null>(null);
   const [edit, setEdit] = useState(false);
-  const [form, setForm] = useState({ date: "", time: "", room: "", capB: "0", capS: "0" });
+  const [form, setForm] = useState({ date: "", time: "", campus: "Strand", room: "", capB: "0", capS: "0" });
   const [guest, setGuest] = useState({ name: "", side: "brothers" as Side });
 
   useEffect(() => {
@@ -61,7 +61,7 @@ function NightAdmin() {
 
   useEffect(() => {
     if (night && !edit) {
-      setForm({ date: night.night_date, time: londonTime(night.iftar_at), room: night.room, capB: String(night.capacity_brothers), capS: String(night.capacity_sisters) });
+      setForm({ date: night.night_date, time: londonTime(night.iftar_at), campus: night.campus ?? "Strand", room: night.room, capB: String(night.capacity_brothers), capS: String(night.capacity_sisters) });
     }
   }, [night, edit]);
 
@@ -80,6 +80,8 @@ function NightAdmin() {
       p_id: id, p_date: form.date, p_iftar_time: form.time, p_room: form.room,
       p_capacity_brothers: Number(form.capB), p_capacity_sisters: Number(form.capS), p_opens_at: null,
     }, "Night updated. Booking opens at 6am the day before the new date.");
+    await supabase().rpc("admin_set_campus", { p_night: id, p_campus: form.campus });
+    load();
     setEdit(false);
   }
 
@@ -105,7 +107,7 @@ function NightAdmin() {
       <div className="flex flex-wrap items-end justify-between gap-4 mt-2 mb-6">
         <div>
           <h1 className="font-display text-4xl font-bold">{fmtDayLong(night.iftar_at)}</h1>
-          <p className="text-muted">Iftar {fmtTime(night.iftar_at)}{night.room ? ` · ${night.room}` : ""} · Booking opens {fmtDateTime(night.booking_opens_at)}</p>
+          <p className="text-muted">Iftar {fmtTime(night.iftar_at)}{place(night) ? ` · ${place(night)}` : ""} · Booking opens {fmtDateTime(night.booking_opens_at)}</p>
           <p className="text-sm mt-1 font-medium capitalize">{night.status === "scheduled" ? "Upcoming" : night.status}</p>
         </div>
         <div className="flex flex-wrap gap-2 no-print">
@@ -146,13 +148,18 @@ function NightAdmin() {
           {!afterIftar && <p className="text-xs text-muted mt-3">Close night appears after iftar time. If nobody closes it, it closes itself at 3am.</p>}
 
           {edit && (
-            <form onSubmit={save} className="grid sm:grid-cols-5 gap-3 mt-5 items-end">
+            <form onSubmit={save} className="grid sm:grid-cols-6 gap-3 mt-5 items-end">
               <Field label="Date"><input type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputCls} /></Field>
               <Field label="Iftar"><input type="time" required value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} className={inputCls} /></Field>
+              <Field label="Campus">
+                <select value={form.campus} onChange={(e) => setForm({ ...form, campus: e.target.value })} className={inputCls}>
+                  {CAMPUSES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </Field>
               <Field label="Room"><input value={form.room} onChange={(e) => setForm({ ...form, room: e.target.value })} className={inputCls} /></Field>
               <Field label="Brothers"><input type="number" min={0} value={form.capB} onChange={(e) => setForm({ ...form, capB: e.target.value })} className={inputCls} /></Field>
               <Field label="Sisters"><input type="number" min={0} value={form.capS} onChange={(e) => setForm({ ...form, capS: e.target.value })} className={inputCls} /></Field>
-              <Button type="submit" className="sm:col-span-5">Save changes</Button>
+              <Button type="submit" className="sm:col-span-6">Save changes</Button>
             </form>
           )}
 

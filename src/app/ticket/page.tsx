@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { useAuth, useServerNow } from "@/lib/auth";
-import { errorText, supabase, type MyBooking } from "@/lib/supabase";
+import { errorText, place, supabase, type MyBooking } from "@/lib/supabase";
 import { countdown, fmtDayLong, fmtTime, hoursBefore, shortCode } from "@/lib/time";
 import { Button, LinkButton, Notice, Spinner } from "@/components/ui";
 
@@ -19,7 +19,13 @@ export default function TicketPage() {
   const load = useCallback(async () => {
     const { data, error } = await supabase().rpc("my_bookings");
     if (error) setError(errorText(error));
-    setItems((data as MyBooking[]) ?? []);
+    const list = (data as MyBooking[]) ?? [];
+    if (list.length) {
+      const { data: ns } = await supabase().from("nights").select("id, campus").in("id", list.map((b) => b.night_id));
+      const campus = new Map((ns ?? []).map((n: { id: string; campus: string | null }) => [n.id, n.campus]));
+      list.forEach((b) => { b.campus = campus.get(b.night_id) ?? null; });
+    }
+    setItems(list);
   }, []);
 
   useEffect(() => {
@@ -137,7 +143,7 @@ function Ticket({ b, name, now, onCancel, busy }:
         <div className="relative">
           <p className="text-xs uppercase tracking-[0.25em] text-gold font-semibold">Iftar ticket</p>
           <h2 className="font-display text-4xl font-bold mt-2 leading-none">{fmtDayLong(b.iftar_at)}</h2>
-          <p className="text-ivory/75 mt-3">{fmtTime(b.iftar_at)}{b.room ? ` · ${b.room}` : ""}</p>
+          <p className="text-ivory/75 mt-3">{fmtTime(b.iftar_at)}{place(b) ? ` · ${place(b)}` : ""}</p>
         </div>
       </div>
       <div className="bg-white flex flex-col items-center px-6 py-8">

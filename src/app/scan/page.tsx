@@ -85,7 +85,7 @@ export default function ScanPage() {
         <>
           <select value={nightId ?? ""} onChange={(e) => setNightId(e.target.value)} className={`${inputCls} font-medium`}>
             {nights.map((n) => (
-              <option key={n.id} value={n.id}>{fmtPlainDate(n.night_date)} · iftar {fmtTime(n.iftar_at)}</option>
+              <option key={n.id} value={n.id}>{fmtPlainDate(n.night_date)} · {fmtTime(n.iftar_at)}{n.campus ? ` · ${n.campus}` : ""}</option>
             ))}
           </select>
 

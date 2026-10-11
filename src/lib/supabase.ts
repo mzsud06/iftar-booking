@@ -24,6 +24,13 @@ export function supabase(): SupabaseClient {
 }
 
 export type Side = "brothers" | "sisters";
+export type Campus = "Guy's" | "Strand" | "Waterloo";
+export const CAMPUSES: Campus[] = ["Guy's", "Strand", "Waterloo"];
+
+// "Strand · Great Hall"
+export function place(n: { campus?: string | null; room?: string | null }): string {
+  return [n.campus, n.room].filter(Boolean).join(" · ");
+}
 export type Role = "attendee" | "volunteer" | "admin";
 
 export type Profile = {
@@ -43,6 +50,7 @@ export type Night = {
   night_date: string;
   iftar_at: string;
   room: string;
+  campus: Campus | null;
   capacity_brothers: number;
   capacity_sisters: number;
   booking_opens_at: string;
@@ -74,6 +82,7 @@ export type MyBooking = {
   checked_in_at: string | null;
   from_waitlist: boolean;
   waitlist_position: number | null;
+  campus?: string | null;
 };
 
 // Turn a Postgres error into a sentence people can read.

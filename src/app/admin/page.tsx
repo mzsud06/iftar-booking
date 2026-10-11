@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { errorText, supabase, type Night, type Role, type Side } from "@/lib/supabase";
+import { CAMPUSES, errorText, place, supabase, type Campus, type Night, type Role, type Side } from "@/lib/supabase";
 import { fmtDateTime, fmtPlainDate, fmtTime } from "@/lib/time";
 import { Button, Card, Field, Notice, PageTitle, Spinner, inputCls } from "@/components/ui";
 
@@ -45,6 +45,7 @@ function Nights() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [room, setRoom] = useState("");
+  const [campus, setCampus] = useState<Campus>("Strand");
   const [capB, setCapB] = useState("100");
   const [capS, setCapS] = useState("100");
   const [busy, setBusy] = useState(false);
@@ -59,10 +60,11 @@ function Nights() {
   async function add(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setMsg(null);
-    const { error } = await supabase().rpc("admin_save_night", {
+    const { data, error } = await supabase().rpc("admin_save_night", {
       p_id: null, p_date: date, p_iftar_time: time, p_room: room,
       p_capacity_brothers: Number(capB), p_capacity_sisters: Number(capS), p_opens_at: null,
     });
+    if (!error && data) await supabase().rpc("admin_set_campus", { p_night: (data as Night).id, p_campus: campus });
     setBusy(false);
     if (error) return setMsg({ tone: "error", text: errorText(error) });
     setMsg({ tone: "success", text: `Added ${fmtPlainDate(date)}. Booking opens at 6am the day before.` });
@@ -82,7 +84,7 @@ function Nights() {
               <Link key={n.id} href={`/admin/night?id=${n.id}`} className="flex items-center justify-between gap-4 py-4 border-b border-line hover:text-crimson-900">
                 <div>
                   <p className="font-medium">{fmtPlainDate(n.night_date)} <span className="text-muted font-normal">· iftar {fmtTime(n.iftar_at)}</span></p>
-                  <p className="text-sm text-muted">{n.room || "No room set"} · {n.capacity_brothers} brothers, {n.capacity_sisters} sisters</p>
+                  <p className="text-sm text-muted">{place(n) || "No location set"} · {n.capacity_brothers} brothers, {n.capacity_sisters} sisters</p>
                 </div>
                 <span className={`text-xs font-semibold uppercase tracking-wider ${
                   n.status === "scheduled" ? "text-crimson-900" : n.status === "closed" ? "text-muted" : "text-danger"}`}>
@@ -99,7 +101,12 @@ function Nights() {
         <form onSubmit={add} className="space-y-3">
           <Field label="Date"><input type="date" required value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} /></Field>
           <Field label="Iftar time" hint="Use the mosque timetable you follow."><input type="time" required value={time} onChange={(e) => setTime(e.target.value)} className={inputCls} /></Field>
-          <Field label="Room"><input value={room} onChange={(e) => setRoom(e.target.value)} className={inputCls} placeholder="e.g. Great Hall, Strand" /></Field>
+          <Field label="Campus">
+            <select value={campus} onChange={(e) => setCampus(e.target.value as Campus)} className={inputCls}>
+              {CAMPUSES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Room"><input value={room} onChange={(e) => setRoom(e.target.value)} className={inputCls} placeholder="e.g. Great Hall" /></Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Brothers"><input type="number" min={0} required value={capB} onChange={(e) => setCapB(e.target.value)} className={inputCls} /></Field>
             <Field label="Sisters"><input type="number" min={0} required value={capS} onChange={(e) => setCapS(e.target.value)} className={inputCls} /></Field>
