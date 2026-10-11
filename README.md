@@ -29,3 +29,7 @@ npm run dev
 
 - Every 5 minutes: waitlist offers older than 1 hour expire and pass to the next person.
 - Every hour: nights still open after 3am the next morning close themselves and apply strikes.
+
+## Testing the rules
+
+Paste `supabase/tests/rules_test.sql` into the Supabase SQL editor and run it. It runs every booking rule on fake data, shows the results as an error message, and saves nothing.

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth, useServerNow } from "@/lib/auth";
 import { errorText, place, supabase, type MyBooking, type Night, type NightCount } from "@/lib/supabase";
 import { countdown, fmtDate, fmtDayLong, fmtTime, hoursBefore } from "@/lib/time";
-import { Button, LinkButton, Notice, Spinner } from "@/components/ui";
+import { Button, LinkButton, Spinner } from "@/components/ui";
 
 export default function Home() {
   const { ready, session, profile } = useAuth();
@@ -77,7 +77,7 @@ export default function Home() {
               night={next} now={now} counts={counts}
               booking={mine.find((b) => b.night_id === next.id) ?? null}
               loggedIn={!!session} hasProfile={!!profile} side={profile?.side ?? null}
-              banLeft={profile?.ban_nights_left ?? 0} busy={busy} onBook={book}
+              banLeft={profile?.ban_nights_left ?? 0} busy={busy} onBook={book} error={error}
             />
           ) : (
             <>
@@ -89,17 +89,15 @@ export default function Home() {
       </section>
 
       <div className="mx-auto max-w-3xl px-6">
-        {error && <div className="mt-6"><Notice tone="error">{error}</Notice></div>}
-
         {upcoming.length > 0 && (
           <section className="mt-12">
-            <p className="text-xs uppercase tracking-[0.2em] text-gold font-semibold">Next</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-gold-ink font-semibold">Next</p>
             <div className="rule mt-3" />
             {upcoming.map((n) => (
               <div key={n.id} className="flex items-baseline justify-between py-4 border-b border-line">
                 <span>
                   <span className="font-display text-2xl font-semibold text-crimson-900">{fmtDate(n.iftar_at)}</span>
-                  {n.campus && <span className="ml-3 text-xs uppercase tracking-[0.15em] text-gold font-semibold">{n.campus}</span>}
+                  {n.campus && <span className="ml-3 text-sm text-muted">{n.campus}</span>}
                 </span>
                 <span className="text-sm text-muted">Opens {fmtDate(n.booking_opens_at)} {fmtTime(n.booking_opens_at)}</span>
               </div>
@@ -119,14 +117,14 @@ export default function Home() {
 function NextNight(props: {
   night: Night; now: number; counts: NightCount[]; booking: MyBooking | null;
   loggedIn: boolean; hasProfile: boolean; side: "brothers" | "sisters" | null; banLeft: number;
-  busy: boolean; onBook: () => void;
+  busy: boolean; onBook: () => void; error: string | null;
 }) {
-  const { night, now, counts, booking, loggedIn, hasProfile, side, banLeft, busy, onBook } = props;
+  const { night, now, counts, booking, loggedIn, hasProfile, side, banLeft, busy, onBook, error } = props;
   const opens = new Date(night.booking_opens_at).getTime();
   const iftar = new Date(night.iftar_at).getTime();
   const closes = hoursBefore(night.iftar_at, 3).getTime();
   const mySide = counts.find((c) => c.side === side);
-  const full = mySide ? mySide.spots_left <= 0 : false;
+  const full = mySide ? mySide.spots_left <= 0 || mySide.waitlisted > 0 : false;
 
   let action: React.ReactNode;
   if (now < opens) {
@@ -166,15 +164,15 @@ function NextNight(props: {
 
   return (
     <div>
-      <p className="text-gold text-xs uppercase tracking-[0.25em] font-semibold">Next iftar{night.campus ? ` · ${night.campus}` : ""}</p>
+      <p className="text-gold text-xs uppercase tracking-[0.25em] font-semibold">Next iftar</p>
       <h1 className="font-display text-6xl sm:text-7xl font-bold mt-3 leading-[0.95]">{fmtDayLong(night.iftar_at)}</h1>
       <p className="mt-4 text-ivory/80 text-lg">
-        {fmtTime(night.iftar_at)}{night.room ? ` · ${night.room}` : ""}
+        {fmtTime(night.iftar_at)}{place(night) ? ` · ${place(night)}` : ""}
       </p>
 
       {counts.length > 0 && now < iftar + 2 * 3600_000 && (
         <div className="flex gap-10 mt-8">
-          {counts.map((c) => (
+          {counts.filter((c) => !side || c.side === side).map((c) => (
             <div key={c.side}>
               <p className="font-display text-4xl font-bold tabular-nums text-gold">{c.spots_left}</p>
               <p className="text-xs uppercase tracking-[0.2em] text-ivory/60">{c.side} left</p>
@@ -184,6 +182,7 @@ function NextNight(props: {
       )}
 
       <div className="mt-10">{action}</div>
+      {error && <p role="alert" className="mt-4 text-gold-soft border-l-2 border-gold pl-3">{error}</p>}
     </div>
   );
 }

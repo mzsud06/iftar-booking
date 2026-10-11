@@ -15,16 +15,35 @@ export default function TicketPage() {
   const [items, setItems] = useState<MyBooking[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase().rpc("my_bookings");
-    if (error) setError(errorText(error));
+    if (error) {
+      // No signal: show the last tickets saved on this phone so the QR still works at the door.
+      try {
+        const cached = localStorage.getItem("iftar:tickets");
+        if (cached) {
+          const keep = (JSON.parse(cached) as MyBooking[]).filter(
+            (b) => new Date(b.iftar_at).getTime() + 3 * 3600_000 > Date.now(),
+          );
+          setOffline(true);
+          setItems(keep);
+          return;
+        }
+      } catch {}
+      setError(errorText(error));
+      setItems([]);
+      return;
+    }
+    setOffline(false);
     const list = (data as MyBooking[]) ?? [];
     if (list.length) {
       const { data: ns } = await supabase().from("nights").select("id, campus").in("id", list.map((b) => b.night_id));
       const campus = new Map((ns ?? []).map((n: { id: string; campus: string | null }) => [n.id, n.campus]));
       list.forEach((b) => { b.campus = campus.get(b.night_id) ?? null; });
     }
+    try { localStorage.setItem("iftar:tickets", JSON.stringify(list)); } catch {}
     setItems(list);
   }, []);
 
@@ -68,6 +87,7 @@ export default function TicketPage() {
   return (
     <div className="mx-auto max-w-md px-6 py-10">
       {error && <div className="mb-6"><Notice tone="error">{error}</Notice></div>}
+      {offline && <div className="mb-6"><Notice tone="warn">No signal. Showing your saved ticket.</Notice></div>}
 
       {items.length === 0 && (
         <div className="py-10">
@@ -83,7 +103,7 @@ export default function TicketPage() {
               onCancel={() => cancel(b)} busy={busyId === b.booking_id} />
           ) : b.status === "offered" ? (
             <div key={b.booking_id}>
-              <p className="text-xs uppercase tracking-[0.2em] text-gold font-semibold">Spot available</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-gold-ink font-semibold">Spot available</p>
               <h2 className="font-display text-4xl font-bold text-crimson-900 mt-1">{fmtDayLong(b.iftar_at)}</h2>
               {b.offer_expires_at && (
                 <p className="mt-2 text-muted">Confirm within <span className="text-ink font-semibold tabular-nums">{countdown(new Date(b.offer_expires_at).getTime() - now)}</span></p>
@@ -95,7 +115,7 @@ export default function TicketPage() {
             </div>
           ) : (
             <div key={b.booking_id}>
-              <p className="text-xs uppercase tracking-[0.2em] text-gold font-semibold">Waitlist</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-gold-ink font-semibold">Waitlist</p>
               <h2 className="font-display text-4xl font-bold text-crimson-900 mt-1">{fmtDayLong(b.iftar_at)}</h2>
               <p className="font-display text-7xl font-bold text-crimson-900 mt-4 leading-none">#{b.waitlist_position}</p>
               <p className="text-sm text-muted mt-2">Closes {fmtTime(hoursBefore(b.iftar_at, 3).toISOString())}</p>

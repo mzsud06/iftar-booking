@@ -5,12 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, useServerNow } from "@/lib/auth";
 import { CAMPUSES, errorText, place, supabase, type Night, type NightCount, type Side } from "@/lib/supabase";
-import { fmtDateTime, fmtDayLong, fmtTime, shortCode } from "@/lib/time";
+import { fmtDateTime, fmtDayLong, fmtTime, londonDate, shortCode } from "@/lib/time";
 import { Button, Card, Field, Notice, Spinner, inputCls } from "@/components/ui";
 
 type Attendee = {
   booking_id: string; full_name: string; email: string | null; side: Side; short_code: string;
-  status: string; checked_in_at: string | null; is_comp: boolean;
+  status: string; checked_in_at: string | null; checked_in_by_name: string | null; is_comp: boolean; late_cancel: boolean;
 };
 
 export default function NightAdminPage() {
@@ -28,11 +28,11 @@ function NightAdmin() {
   const now = useServerNow(10000);
   const [night, setNight] = useState<Night | null>(null);
   const [counts, setCounts] = useState<NightCount[]>([]);
-  const [rows, setRows] = useState<Attendee[]>([]);
+  const [all, setAll] = useState<Attendee[]>([]);
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState<{ tone: "error" | "success"; text: string } | null>(null);
   const [edit, setEdit] = useState(false);
-  const [form, setForm] = useState({ date: "", time: "", campus: "Strand", room: "", capB: "0", capS: "0" });
+  const [form, setForm] = useState({ date: "", time: "", campus: "Strand", room: "", capB: "0", capS: "0", opensDate: "", opensTime: "" });
   const [guest, setGuest] = useState({ name: "", side: "brothers" as Side });
 
   useEffect(() => {
@@ -45,12 +45,12 @@ function NightAdmin() {
     const [{ data: n }, { data: c }, { data: a }] = await Promise.all([
       sb.from("nights").select("*").eq("id", id).maybeSingle(),
       sb.rpc("night_counts", { p_night: id }),
-      sb.rpc("search_attendees", { p_night: id, p_query: q }),
+      sb.rpc("admin_night_attendees", { p_night: id }),
     ]);
     setNight(n as Night);
     setCounts((c as NightCount[]) ?? []);
-    setRows((a as Attendee[]) ?? []);
-  }, [id, q]);
+    setAll((a as Attendee[]) ?? []);
+  }, [id]);
 
   useEffect(() => {
     if (profile?.role !== "admin") return;
@@ -61,7 +61,7 @@ function NightAdmin() {
 
   useEffect(() => {
     if (night && !edit) {
-      setForm({ date: night.night_date, time: londonTime(night.iftar_at), campus: night.campus ?? "Strand", room: night.room, capB: String(night.capacity_brothers), capS: String(night.capacity_sisters) });
+      setForm({ date: night.night_date, time: londonTime(night.iftar_at), campus: night.campus ?? "Strand", room: night.room, capB: String(night.capacity_brothers), capS: String(night.capacity_sisters), opensDate: londonDate(night.booking_opens_at), opensTime: londonTime(night.booking_opens_at) });
     }
   }, [night, edit]);
 
@@ -81,13 +81,18 @@ function NightAdmin() {
       p_capacity_brothers: Number(form.capB), p_capacity_sisters: Number(form.capS), p_opens_at: null,
     }, "Night updated. Booking opens at 6am the day before the new date.");
     await supabase().rpc("admin_set_campus", { p_night: id, p_campus: form.campus });
+    if (form.opensDate && form.opensTime) {
+      const { error } = await supabase().rpc("admin_set_opens", { p_night: id, p_date: form.opensDate, p_time: form.opensTime });
+      if (error) setMsg({ tone: "error", text: errorText(error) });
+      else setMsg({ tone: "success", text: "Night updated." });
+    }
     load();
     setEdit(false);
   }
 
   function exportCsv() {
-    const header = ["Name", "Email", "Seating", "Code", "Status", "Checked in"];
-    const lines = rows.map((r) => [r.full_name, r.email ?? "", r.side, shortCode(r.short_code), r.is_comp ? "free ticket" : r.status, r.checked_in_at ? fmtTime(r.checked_in_at) : ""]);
+    const header = ["Name", "Email", "Seating", "Code", "Status", "Checked in", "Checked in by"];
+    const lines = all.map((r) => [r.full_name, r.email ?? "", r.side, shortCode(r.short_code), r.is_comp ? "free ticket" : r.status, r.checked_in_at ? fmtTime(r.checked_in_at) : "", r.checked_in_by_name ?? ""]);
     const csv = [header, ...lines].map((l) => l.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
@@ -99,7 +104,14 @@ function NightAdmin() {
 
   const afterIftar = now >= new Date(night.iftar_at).getTime();
   const scheduled = night.status === "scheduled";
-  const notScanned = rows.filter((r) => r.status === "confirmed" && !r.checked_in_at && !r.is_comp).length;
+  const ql = q.trim().toLowerCase();
+  const active = all.filter((r) => ["confirmed", "waitlisted", "offered"].includes(r.status));
+  const rows = active.filter((r) => !ql || r.full_name.toLowerCase().includes(ql) || (r.email ?? "").toLowerCase().includes(ql)
+    || r.short_code.toLowerCase().includes(ql.replace(/[^a-z0-9]/g, "")));
+  const confirmed = all.filter((r) => r.status === "confirmed" && !r.is_comp);
+  const notScanned = confirmed.filter((r) => !r.checked_in_at).length;
+  const lateCancels = all.filter((r) => r.late_cancel).length;
+  const noShowRate = confirmed.length ? Math.round((notScanned / confirmed.length) * 100) : 0;
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-10">
@@ -108,6 +120,12 @@ function NightAdmin() {
         <div>
           <h1 className="font-display text-4xl font-bold">{fmtDayLong(night.iftar_at)}</h1>
           <p className="text-muted">Iftar {fmtTime(night.iftar_at)}{place(night) ? ` · ${place(night)}` : ""} · Booking opens {fmtDateTime(night.booking_opens_at)}</p>
+          {afterIftar && confirmed.length > 0 && (
+            <p className="text-sm mt-2">
+              <span className="font-medium">{notScanned} of {confirmed.length} no-shows ({noShowRate}%)</span>
+              <span className="text-muted"> · {lateCancels} late cancels</span>
+            </p>
+          )}
           <p className="text-sm mt-1 font-medium capitalize">{night.status === "scheduled" ? "Upcoming" : night.status}</p>
         </div>
         <div className="flex flex-wrap gap-2 no-print">
@@ -159,6 +177,10 @@ function NightAdmin() {
               <Field label="Room"><input value={form.room} onChange={(e) => setForm({ ...form, room: e.target.value })} className={inputCls} /></Field>
               <Field label="Brothers"><input type="number" min={0} value={form.capB} onChange={(e) => setForm({ ...form, capB: e.target.value })} className={inputCls} /></Field>
               <Field label="Sisters"><input type="number" min={0} value={form.capS} onChange={(e) => setForm({ ...form, capS: e.target.value })} className={inputCls} /></Field>
+              <div className="sm:col-span-6 grid grid-cols-2 sm:grid-cols-6 gap-3">
+                <Field label="Booking opens (date)"><input type="date" value={form.opensDate} onChange={(e) => setForm({ ...form, opensDate: e.target.value })} className={inputCls} /></Field>
+                <Field label="Booking opens (time)"><input type="time" value={form.opensTime} onChange={(e) => setForm({ ...form, opensTime: e.target.value })} className={inputCls} /></Field>
+              </div>
               <Button type="submit" className="sm:col-span-6">Save changes</Button>
             </form>
           )}
@@ -195,8 +217,10 @@ function NightAdmin() {
                 <td className="pr-4 py-3 capitalize">{r.side}</td>
                 <td className="pr-4 py-3 font-mono">{shortCode(r.short_code)}</td>
                 <td className="pr-4 py-3">
-                  {r.is_comp && <span className="text-gold font-semibold mr-1">Free</span>}
-                  {r.status === "confirmed" ? (r.checked_in_at ? <span className="text-crimson-800 font-medium">In {fmtTime(r.checked_in_at)}</span> : "Booked") : r.status === "offered" ? "Offered spot" : "Waitlist"}
+                  {r.is_comp && <span className="text-gold-ink font-semibold mr-1">Free</span>}
+                  {r.status === "confirmed" ? (r.checked_in_at
+                    ? <span className="text-crimson-800 font-medium">In {fmtTime(r.checked_in_at)}{r.checked_in_by_name && <span className="text-muted font-normal"> by {r.checked_in_by_name}</span>}</span>
+                    : "Booked") : r.status === "offered" ? "Offered spot" : "Waitlist"}
                 </td>
                 <td className="pr-4 py-3 text-right whitespace-nowrap no-print">
                   {scheduled && r.status === "confirmed" && !r.checked_in_at && (

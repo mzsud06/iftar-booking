@@ -34,7 +34,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
       return;
     }
-    const { data } = await supabase().from("profiles").select("*").eq("id", uid).maybeSingle();
+    const key = `iftar:profile:${uid}`;
+    const { data, error } = await supabase().from("profiles").select("*").eq("id", uid).maybeSingle();
+    if (error) {
+      // Offline or the database is unreachable: fall back to the last copy on this phone.
+      try {
+        const cached = localStorage.getItem(key);
+        if (cached) { setProfile(JSON.parse(cached) as Profile); return; }
+      } catch {}
+      setProfile(null);
+      return;
+    }
+    try { if (data) localStorage.setItem(key, JSON.stringify(data)); } catch {}
     setProfile((data as Profile) ?? null);
   }, []);
 

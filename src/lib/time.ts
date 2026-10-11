@@ -46,3 +46,8 @@ export function countdown(ms: number): string {
 export function shortCode(c: string): string {
   return c.length === 6 ? `${c.slice(0, 3)}-${c.slice(3)}` : c;
 }
+
+// "2026-10-12" for a timestamp, in London time (for date inputs).
+export function londonDate(iso: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+}

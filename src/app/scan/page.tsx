@@ -200,7 +200,7 @@ function Search({ nightId, onCheckIn, refreshKey }: { nightId: string; onCheckIn
         {rows.map((r) => (
           <div key={r.booking_id} className="flex items-center justify-between gap-3 py-3">
             <div className="min-w-0">
-              <p className="font-medium truncate">{r.full_name}{r.is_comp && <span className="ml-1.5 text-xs text-gold">FREE</span>}</p>
+              <p className="font-medium truncate">{r.full_name}{r.is_comp && <span className="ml-1.5 text-xs text-gold-ink font-semibold">FREE</span>}</p>
               <p className="text-xs text-muted capitalize">{r.side} · {shortCode(r.short_code)} · {r.status === "confirmed" ? (r.checked_in_at ? `in at ${fmtTime(r.checked_in_at)}` : "booked") : r.status}</p>
             </div>
             {r.status === "confirmed" && !r.checked_in_at && (

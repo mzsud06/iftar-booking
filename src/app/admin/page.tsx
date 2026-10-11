@@ -46,6 +46,9 @@ function Nights() {
   const [time, setTime] = useState("");
   const [room, setRoom] = useState("");
   const [campus, setCampus] = useState<Campus>("Strand");
+  const [opensDate, setOpensDate] = useState("");
+  const [opensTime, setOpensTime] = useState("");
+  const [showCancelled, setShowCancelled] = useState(false);
   const [capB, setCapB] = useState("100");
   const [capS, setCapS] = useState("100");
   const [busy, setBusy] = useState(false);
@@ -64,10 +67,17 @@ function Nights() {
       p_id: null, p_date: date, p_iftar_time: time, p_room: room,
       p_capacity_brothers: Number(capB), p_capacity_sisters: Number(capS), p_opens_at: null,
     });
-    if (!error && data) await supabase().rpc("admin_set_campus", { p_night: (data as Night).id, p_campus: campus });
+    if (!error && data) {
+      await supabase().rpc("admin_set_campus", { p_night: (data as Night).id, p_campus: campus });
+      if (opensDate && opensTime) {
+        const r = await supabase().rpc("admin_set_opens", { p_night: (data as Night).id, p_date: opensDate, p_time: opensTime });
+        if (r.error) { setBusy(false); load(); return setMsg({ tone: "error", text: `Night added, but: ${errorText(r.error)}` }); }
+      }
+    }
     setBusy(false);
     if (error) return setMsg({ tone: "error", text: errorText(error) });
-    setMsg({ tone: "success", text: `Added ${fmtPlainDate(date)}. Booking opens at 6am the day before.` });
+    setMsg({ tone: "success", text: `Added ${fmtPlainDate(date)}.` });
+    setOpensDate(""); setOpensTime("");
     const next = new Date(`${date}T12:00:00Z`); next.setUTCDate(next.getUTCDate() + 1);
     setDate(next.toISOString().slice(0, 10));
     load();
@@ -76,11 +86,11 @@ function Nights() {
   return (
     <div className="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
       <Card className="border-t border-line">
-        {nights === null ? <Spinner /> : nights.length === 0 ? (
+        {nights === null ? <Spinner /> : nights.filter((n) => showCancelled || n.status !== "cancelled").length === 0 ? (
           <p className="py-5 text-muted">No nights yet. Add the first one.</p>
         ) : (
           <div className="divide-y divide-line">
-            {nights.map((n) => (
+            {nights.filter((n) => showCancelled || n.status !== "cancelled").map((n) => (
               <Link key={n.id} href={`/admin/night?id=${n.id}`} className="flex items-center justify-between gap-4 py-4 border-b border-line hover:text-crimson-900">
                 <div>
                   <p className="font-medium">{fmtPlainDate(n.night_date)} <span className="text-muted font-normal">· iftar {fmtTime(n.iftar_at)}</span></p>
@@ -93,6 +103,11 @@ function Nights() {
               </Link>
             ))}
           </div>
+        )}
+        {nights && nights.some((n) => n.status === "cancelled") && (
+          <button onClick={() => setShowCancelled((v) => !v)} className="mt-3 text-sm text-muted underline underline-offset-4">
+            {showCancelled ? "Hide cancelled nights" : `Show ${nights.filter((n) => n.status === "cancelled").length} cancelled`}
+          </button>
         )}
       </Card>
 
@@ -111,7 +126,11 @@ function Nights() {
             <Field label="Brothers"><input type="number" min={0} required value={capB} onChange={(e) => setCapB(e.target.value)} className={inputCls} /></Field>
             <Field label="Sisters"><input type="number" min={0} required value={capS} onChange={(e) => setCapS(e.target.value)} className={inputCls} /></Field>
           </div>
-          <p className="text-xs text-muted">Capacity = the smaller of the room limit and the food ordered.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Opens (date)"><input type="date" value={opensDate} onChange={(e) => setOpensDate(e.target.value)} className={inputCls} /></Field>
+            <Field label="Opens (time)"><input type="time" value={opensTime} onChange={(e) => setOpensTime(e.target.value)} className={inputCls} /></Field>
+          </div>
+          <p className="text-xs text-muted">Leave blank for 6am the day before. Capacity = room limit or food ordered, whichever is smaller.</p>
           <Button type="submit" busy={busy} className="w-full">Add night</Button>
         </form>
         {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
@@ -178,7 +197,7 @@ const actionLabels: Record<string, string> = {
   strike: "Strike", ban: "Blocked", booking_cancelled_by_ban: "Booking cancelled by block", night_closed: "Night closed",
   night_created: "Night added", night_edited: "Night edited", night_cancelled: "Night cancelled", free_ticket: "Free ticket",
   admin_cancelled_booking: "Booking cancelled by admin", undo_check_in: "Check-in undone", manual_check_in: "Checked in by admin",
-  role_changed: "Role changed", side_changed: "Seating changed", strike_removed: "Strike removed", ban_lifted: "Block lifted",
+  role_changed: "Role changed", release_time_changed: "Booking time changed", side_changed: "Seating changed", strike_removed: "Strike removed", ban_lifted: "Block lifted",
 };
 
 function Activity() {
