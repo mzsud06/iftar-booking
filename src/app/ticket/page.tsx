@@ -159,7 +159,7 @@ function Ticket({ b, name, now, onCancel, busy }:
   return (
     <div>
       <div className="bg-crimson-900 text-ivory relative overflow-hidden px-6 pt-7 pb-8">
-        <div className="pattern absolute inset-0" aria-hidden />
+        <div className="pattern pattern-fade absolute inset-0" aria-hidden />
         <div className="relative">
           <p className="text-xs uppercase tracking-[0.25em] text-gold font-semibold">Iftar ticket</p>
           <h2 className="font-display text-4xl font-bold mt-2 leading-none">{fmtDayLong(b.iftar_at)}</h2>

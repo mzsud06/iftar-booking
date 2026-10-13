@@ -70,7 +70,7 @@ export default function Home() {
   return (
     <div>
       <section className="bg-crimson-900 text-ivory relative overflow-hidden">
-        <div className="pattern absolute inset-0" aria-hidden />
+        <div className="pattern pattern-fade absolute inset-0" aria-hidden />
         <div className="relative mx-auto max-w-3xl px-6 pt-14 pb-16">
           {next ? (
             <NextNight
