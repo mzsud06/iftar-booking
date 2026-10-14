@@ -49,8 +49,8 @@ function Nights() {
   const [opensDate, setOpensDate] = useState("");
   const [opensTime, setOpensTime] = useState("");
   const [showCancelled, setShowCancelled] = useState(false);
-  const [capB, setCapB] = useState("75");
-  const [capS, setCapS] = useState("75");
+  const [capB, setCapB] = useState("100");
+  const [capS, setCapS] = useState("100");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ tone: "error" | "success"; text: string } | null>(null);
 
